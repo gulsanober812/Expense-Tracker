@@ -10,7 +10,10 @@ function App() {
     return <WelcomeScreen onGetStarted={() => setShowWelcome(false)} />;
   }
 
-  return(<><Header/><ExpenseTracker />;
+  return(<><Header onBack={() => {
+  // Your custom back logic here
+  setShowWelcome(true); // Example if using state management
+}} /><ExpenseTracker />;
   </>)
 }
 

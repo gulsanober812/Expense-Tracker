@@ -1,51 +1,54 @@
 import React from 'react';
-import { useState } from 'react';
-import ThemeToggle from './ThemeToggle';
-import { FiMenu, FiX, FiSun, FiMoon, FiBell, FiUser } from 'react-icons/fi';
-import { 
-  FaChartPie, 
-  FaFileInvoiceDollar, 
-  FaCheckCircle, 
-  FaMoneyBillWave, 
-  FaShieldAlt, 
-  FaUsersCog, 
-  FaCog 
-} from 'react-icons/fa';
-import { FiDownload } from 'react-icons/fi'; 
+import { useState, useEffect } from 'react';
+import { FiBell, FiUser, FiDownload, FiSun, FiMoon, FiMenu, FiX, FiArrowLeft } from 'react-icons/fi';
 
-const Header = () => {
+ 
+const Header = ({ onBack }) => {
   const [darkMode, setDarkMode] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleTheme = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle('dark');
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    document.documentElement.classList.toggle('dark', newDarkMode);
+    localStorage.setItem('darkMode', newDarkMode ? 'enabled' : 'disabled');
   };
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  useEffect(() => {
+    const savedMode = localStorage.getItem('darkMode');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedMode === 'enabled' || (!savedMode && prefersDark)) {
+      setDarkMode(true);
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
 
   const toggleNotifications = () => {
     setNotificationsOpen(!notificationsOpen);
   };
 
-  const navItems = [
-    { name: 'Dashboard', icon: <FaChartPie className="text-lg" /> },
-    { name: 'Reports', icon: <FaFileInvoiceDollar className="text-lg" /> },
-    { name: 'Expenses', icon: <FaFileInvoiceDollar className="text-lg" /> },
-    { name: 'My Approvals', icon: <FaCheckCircle className="text-lg" /> },
-    { name: 'Advance Request', icon: <FaMoneyBillWave className="text-lg" /> },
-    { name: 'Advance Payment', icon: <FaMoneyBillWave className="text-lg" /> },
-    { name: 'Policy', icon: <FaShieldAlt className="text-lg" /> },
-    { name: 'Users', icon: <FaUsersCog className="text-lg" /> },
-    { name: 'Settings', icon: <FaCog className="text-lg" /> }
-  ];
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
 
-    
   const handleDownloadCSV = () => {
-    
     const transactions = [
       { description: 'Groceries', amount: 50.00, type: 'Expense', date: '07/29/2025' },
       { description: 'Salary', amount: 2000.00, type: 'Income', date: '07/30/2025' }
@@ -61,7 +64,6 @@ const Header = () => {
       ])
     ].map(e => e.join(',')).join('\n');
 
-   
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -72,40 +74,58 @@ const Header = () => {
     document.body.removeChild(link);
   };
 
+    const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      // Fallback behavior
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        // If no history, you might want to redirect to a specific URL
+        window.location.href = '/'; // Adjust this as needed
+      }
+    }
+  };
+
   return (
     <>
-      <header className="bg-white dark:bg-gray-800 shadow-sm py-2 px-6 flex items-center justify-between sticky top-0 z-10">
-       
-        <div className="flex items-center space-x-4">
-            
+      <header className="bg-white dark:bg-gray-800 shadow-sm py-2 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-10">
+        {/* Left section - Back button and Logo */}
+         <div className="flex items-center space-x-2">
+          {/* Back arrow button */}
+          <button 
+            onClick={handleBack}
+            className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white p-1"
+            aria-label="Back to welcome screen"
+          >
+            <FiArrowLeft size={20} />
+          </button>
           
-          
-          <div className="flex items-center">
-            <div className="h-8 w-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold mr-2">
-              CD
-            </div>
-            <h1 className="text-xl font-bold text-gray-800 dark:text-white">Cash Candy</h1>
+          <div className="h-8 w-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold mr-2">
+            CD
           </div>
+          <h1 className="text-xl font-bold text-gray-800 dark:text-white">Cash Candy</h1>
         </div>
 
-       
-        <div className="flex items-center space-x-6">
+        {/* Desktop icons - hidden on mobile */}
+        <div className="hidden md:flex items-center space-x-6">
           <button
             onClick={handleDownloadCSV}
             className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white flex items-center"
             title="Download CSV"
           >
             <FiDownload size={20} className="mr-1" />
-            <span className="text-sm hidden sm:inline"></span>
+            <span className="text-sm">Export</span>
           </button>
 
-        
-          
-          {/* Notifications */}
+      
+
           <div className="relative">
             <button 
               onClick={toggleNotifications}
               className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white relative"
+              aria-label="Notifications"
             >
               <FiBell size={20} />
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
@@ -134,7 +154,6 @@ const Header = () => {
             )}
           </div>
           
-          {/* Profile */}
           <div className="flex items-center space-x-2">
             <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
               <FiUser size={16} />
@@ -142,26 +161,47 @@ const Header = () => {
             <span className="text-sm font-medium text-gray-700 dark:text-white">MahNoor</span>
           </div>
         </div>
+
+        {/* Mobile menu button - shown only on mobile */}
+        <button 
+          onClick={toggleMobileMenu}
+          className="md:hidden text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+        </button>
       </header>
 
-      {/* Sidebar */}
-      {sidebarOpen && (
-        <aside className="w-64 bg-white dark:bg-gray-800 shadow-md fixed top-12 left-0 h-[calc(100vh-3rem)] z-10">
-          <div className="h-full overflow-y-auto py-4 px-3">
-            <ul className="space-y-1">
-              {navItems.map((item, index) => (
-                <li key={index}>
-                  <a href="#" className={`flex items-center p-3 text-base font-medium ${index === 2 ? 'bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'} rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700`}>
-                    <span className="text-gray-500 dark:text-gray-400 mr-3">
-                      {item.icon}
-                    </span>
-                    <span>{item.name}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
+      {/* Mobile menu dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white dark:bg-gray-800 shadow-md py-2 px-4 absolute right-0 left-0 z-10">
+          <div className="flex flex-col space-y-3">
+            <button
+              onClick={handleDownloadCSV}
+              className="flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded"
+            >
+              <FiDownload size={20} className="mr-3" />
+              <span>Export CSV</span>
+            </button>
+
+
+            <button 
+              onClick={toggleNotifications}
+              className="flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded relative"
+            >
+              <FiBell size={20} className="mr-3" />
+              <span>Notifications</span>
+              <span className="absolute right-4 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
+            </button>
+
+            <div className="flex items-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded">
+              <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white mr-3">
+                <FiUser size={16} />
+              </div>
+              <span>MahNoor</span>
+            </div>
           </div>
-        </aside>
+        </div>
       )}
     </>
   );
